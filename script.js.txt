@@ -1,0 +1,95 @@
+const board = Array(9).fill(null);
+let currentPlayer = 'X';
+let isGameOver = false;
+
+// DOM Elements
+const cells = document.querySelectorAll('.cell');
+const resultMessage = document.getElementById('result-message');
+const resetBtn = document.getElementById('reset-btn');
+const boardElement = document.querySelector('.board');
+
+const winningCombinations = [
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8],
+  [0, 3, 6],
+  [1, 4, 7],
+  [2, 5, 8],
+  [0, 4, 8],
+  [2, 4, 6],
+];
+
+// Add click event listeners to cells
+cells.forEach((cell, index) => {
+  cell.addEventListener('click', () => handleCellClick(cell, index));
+});
+
+// Reset button listener
+resetBtn.addEventListener('click', resetGame);
+
+function handleCellClick(cell, index) {
+  if (isGameOver || board[index]) return;
+
+  board[index] = currentPlayer;
+  cell.classList.add(currentPlayer.toLowerCase());
+  cell.style.pointerEvents = 'none';
+
+  const winningCombination = checkWin();
+  if (winningCombination) {
+    displayResult(`${currentPlayer} Wins! 🎉`);
+    highlightWinningLine(winningCombination);
+    isGameOver = true;
+    return;
+  }
+
+  if (board.every(cell => cell)) {
+    displayResult("It's a Tie! 🤝");
+    isGameOver = true;
+    return;
+  }
+
+  currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+}
+
+function checkWin() {
+  return winningCombinations.find(combination =>
+    combination.every(index => board[index] === currentPlayer)
+  );
+}
+
+function displayResult(message) {
+  resultMessage.textContent = message;
+}
+
+function highlightWinningLine(winningCombination) {
+  const [start, , end] = winningCombination;
+  const startCell = cells[start].getBoundingClientRect();
+  const endCell = cells[end].getBoundingClientRect();
+  const line = document.createElement('div');
+  line.classList.add('winning-line');
+
+  const boardRect = boardElement.getBoundingClientRect();
+  const x1 = startCell.left + startCell.width / 2 - boardRect.left;
+  const y1 = startCell.top + startCell.height / 2 - boardRect.top;
+  const x2 = endCell.left + endCell.width / 2 - boardRect.left;
+  const y2 = endCell.top + endCell.height / 2 - boardRect.top;
+
+  line.style.width = `${Math.hypot(x2 - x1, y2 - y1)}px`;
+  line.style.transform = `rotate(${Math.atan2(y2 - y1, x2 - x1)}rad)`;
+  line.style.left = `${x1}px`;
+  line.style.top = `${y1}px`;
+
+  boardElement.appendChild(line);
+}
+
+function resetGame() {
+  board.fill(null);
+  cells.forEach(cell => {
+    cell.classList.remove('x', 'o');
+    cell.style.pointerEvents = 'auto';
+  });
+  document.querySelectorAll('.winning-line').forEach(line => line.remove());
+  resultMessage.textContent = '';
+  currentPlayer = 'X';
+  isGameOver = false;
+}
